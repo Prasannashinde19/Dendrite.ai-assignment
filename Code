@@ -1,0 +1,200 @@
+# Name - Prasanna Kailas Shinde
+#Course - M.Sc Statistics
+#Email - 1132220523@mitwpu.edu.in
+
+import json
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectFromModel
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error, r2_score
+
+def parse_json(json_file):
+    with open(json_file, 'r') as f:
+        json_data = json.load(f)
+    # Extract relevant information from JSON
+    dataset_name = json_data['dataset_name']
+    target_variable = json_data['target_variable']
+    prediction_type = json_data['prediction_type']
+    feature_handling = json_data['feature_handling']
+    feature_reduction_method = json_data['feature_reduction_method']
+    selected_algorithms = json_data['selected_algorithms']
+    hyperparameters = json_data['hyperparameters']
+    return dataset_name, target_variable, prediction_type, feature_handling, feature_reduction_method, selected_algorithms, hyperparameters
+
+def load_and_preprocess_data(csv_file):
+    # Load dataset
+    data = pd.read_csv(csv_file)
+    # Handle missing values if any
+    data.dropna(inplace=True)
+    # Encode categorical variables if any
+    # Split data into features and target variable
+    X = data.drop(columns=[target_variable])
+    y = data[target_variable]
+    # Split data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Perform feature scaling
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    return X_train_scaled, X_test_scaled, y_train, y_test
+
+import pandas as pd
+from sklearn.feature_selection import SelectKBest, f_regression
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import LabelEncoder
+
+def perform_feature_reduction(feature_reduction_config, X_train, y_train):
+    method = feature_reduction_config["feature_reduction_method"]
+    
+    if method == "No Reduction":
+        return X_train
+    
+    num_features_to_keep = feature_reduction_config[method]["num_of_features_to_keep"]
+    
+    if method == "Correlation with target":
+        # Label encode the target variable
+        label_encoder = LabelEncoder()
+        y_train_encoded = label_encoder.fit_transform(y_train)
+        
+        selector = SelectKBest(score_func=f_regression, k=num_features_to_keep)
+        X_train_reduced = selector.fit_transform(X_train, y_train_encoded)
+        return X_train_reduced
+    
+    elif method == "Tree-based":
+        depth_of_trees = feature_reduction_config[method]["depth_of_trees"]
+        num_of_trees = feature_reduction_config[method]["num_of_trees"]
+        # Perform tree-based feature reduction (e.g., using RandomForest)
+        # Code for tree-based feature reduction
+        
+    elif method == "Principal Component Analysis":
+        pca = PCA(n_components=num_features_to_keep)
+        X_train_reduced = pca.fit_transform(X_train)
+        return X_train_reduced
+    
+    else:
+        raise ValueError("Invalid feature reduction method specified")
+
+# Example usage:
+feature_reduction_config = {
+    "feature_reduction_method": "Correlation with target",
+    "No Reduction": {"is_selected": True, "num_of_features_to_keep": 5},
+    "Correlation with target": {"is_selected": False, "num_of_features_to_keep": 0},
+    "Tree-based": {"is_selected": False, "num_of_features_to_keep": 0, "depth_of_trees": 0, "num_of_trees": 0},
+    "Principal Component Analysis": {"is_selected": False, "num_of_features_to_keep": 0}
+}
+
+# Assuming X_train and y_train are your training data
+X_train_reduced = perform_feature_reduction(feature_reduction_config, X_train, y_train)
+
+
+from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.linear_model import LinearRegression, LogisticRegression, SGDRegressor, SGDClassifier
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, GradientBoostingRegressor, GradientBoostingClassifier, ExtraTreesRegressor, ExtraTreesClassifier
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn.svm import SVR, SVC
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.kernel_ridge import KernelRidge
+
+
+def create_models(selected_algorithms):
+    models = []
+    for algorithm in selected_algorithms:
+        if algorithm == 'LinearRegression':
+            models.append(('Linear Regression', LinearRegression()))
+        elif algorithm == 'LogisticRegression':
+            models.append(('Logistic Regression', LogisticRegression()))
+        elif algorithm == 'RandomForestRegressor':
+            models.append(('Random Forest Regressor', RandomForestRegressor(min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, bootstrap=True, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, ccp_alpha=0.0, max_samples=None)))
+        elif algorithm == 'RandomForestClassifier':
+            models.append(('Random Forest Classifier', RandomForestClassifier(n_estimators=100, criterion='gini', max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0,  bootstrap=True, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, class_weight=None, ccp_alpha=0.0, max_samples=None)))
+        elif algorithm == 'GradientBoostingRegressor':
+            models.append(('Gradient Boosting Regressor', GradientBoostingRegressor(loss='ls', learning_rate=0.1, n_estimators=100, subsample=1.0, criterion='friedman_mse', min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_depth=3, min_impurity_decrease=0.0, init=None, random_state=None, max_features=None, alpha=0.9, verbose=0, max_leaf_nodes=None, warm_start=False, validation_fraction=0.1, n_iter_no_change=None, tol=0.0001, ccp_alpha=0.0)))
+        elif algorithm == 'GradientBoostingClassifier':
+            models.append(('Gradient Boosting Classifier', GradientBoostingClassifier(loss='deviance', learning_rate=0.1, n_estimators=100, subsample=1.0, criterion='friedman_mse', min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_depth=3, min_impurity_decrease=0.0, init=None, random_state=None, max_features=None, verbose=0, max_leaf_nodes=None, warm_start=False, validation_fraction=0.1, n_iter_no_change=None, tol=0.0001, ccp_alpha=0.0)))
+        elif algorithm == 'DecisionTreeRegressor':
+            models.append(('Decision Tree Regressor', DecisionTreeRegressor(criterion='mse', splitter='best', max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features=None, random_state=None, max_leaf_nodes=None, min_impurity_decrease=0.0, ccp_alpha=0.0)))
+        elif algorithm == 'DecisionTreeClassifier':
+            models.append(('Decision Tree Classifier', DecisionTreeClassifier(criterion='gini', splitter='best', max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features=None, random_state=None, max_leaf_nodes=None, min_impurity_decrease=0.0, class_weight=None, ccp_alpha=0.0)))
+        elif algorithm == 'SVR':
+            models.append(('Support Vector Regressor', SVR(kernel='rbf', degree=3, gamma='scale', coef0=0.0, tol=0.001, C=1.0, epsilon=0.1, shrinking=True, cache_size=200, verbose=False, max_iter=-1)))
+        elif algorithm == 'SVC':
+            models.append(('Support Vector Classifier', SVC(C=1.0, kernel='rbf', degree=3, gamma='scale', coef0=0.0, shrinking=True, probability=False, tol=0.001, cache_size=200, class_weight=None, verbose=False, max_iter=-1, decision_function_shape='ovr', break_ties=False, random_state=None)))
+        elif algorithm == 'KNeighborsRegressor':
+            models.append(('K Neighbors Regressor', KNeighborsRegressor(n_neighbors=5, weights='uniform', algorithm='auto', leaf_size=30, p=2, metric='minkowski', metric_params=None, n_jobs=None)))
+        elif algorithm == 'KNeighborsClassifier':
+            models.append(('K Neighbors Classifier', KNeighborsClassifier(n_neighbors=5, weights='uniform', algorithm='auto', leaf_size=30, p=2, metric='minkowski', metric_params=None, n_jobs=None)))
+        elif algorithm == 'SGDRegressor':
+            models.append(('Stochastic Gradient Descent Regressor', SGDRegressor(loss='squared_loss', penalty='l2', alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=1000, tol=0.001, shuffle=True, verbose=0, epsilon=0.1, random_state=None, learning_rate='invscaling', eta0=0.01, power_t=0.25, early_stopping=False, validation_fraction=0.1, n_iter_no_change=5, warm_start=False, average=False)))
+        elif algorithm == 'SGDClassifier':
+            models.append(('Stochastic Gradient Descent Classifier', SGDClassifier(loss='hinge', penalty='l2', alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=1000, tol=0.001, verbose=0, epsilon=0.1, n_jobs=None, random_state=None, learning_rate='optimal', eta0=0.0, power_t=0.5, early_stopping=False, validation_fraction=0.1, n_iter_no_change=5, class_weight=None, warm_start=False, average=False, shuffle=True)))
+        elif algorithm == 'ExtraTreesRegressor':
+            models.append(('Extra Trees Regressor', ExtraTreesRegressor(n_estimators=100, criterion='mse', max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, bootstrap=False, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, ccp_alpha=0.0, max_samples=None)))
+        elif algorithm == 'ExtraTreesClassifier':
+            models.append(('Extra Trees Classifier', ExtraTreesClassifier(n_estimators=100, criterion='gini', max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, bootstrap=False, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, class_weight=None, ccp_alpha=0.0, max_samples=None)))
+        elif algorithm == 'MLPRegressor':
+            models.append(('Multi-layer Perceptron Regressor', MLPRegressor(hidden_layer_sizes=(100, ), activation='relu', solver='adam', alpha=0.0001, batch_size='auto', learning_rate='constant', learning_rate_init=0.001, power_t=0.5, max_iter=200, shuffle=True, random_state=None, tol=0.0001, verbose=False, warm_start=False, momentum=0.9, nesterovs_momentum=True, early_stopping=False, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, n_iter_no_change=10, max_fun=15000)))
+        elif algorithm == 'MLPClassifier':
+            models.append(('Multi-layer Perceptron Classifier', MLPClassifier(hidden_layer_sizes=(100, ), activation='relu', solver='adam', alpha=0.0001, batch_size='auto', learning_rate='constant', learning_rate_init=0.001, power_t=0.5, max_iter=200, shuffle=True, random_state=None, tol=0.0001, verbose=False, warm_start=False, momentum=0.9, nesterovs_momentum=True, early_stopping=False, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, n_iter_no_change=10, max_fun=15000)))
+        elif algorithm == 'KernelRidge':
+            models.append(('Kernel Ridge', KernelRidge(alpha=1.0, kernel='linear', gamma=None, degree=3, coef0=1, kernel_params=None)))
+        elif algorithm == 'neural_network':
+            models.append(('Neural Network', MLPClassifier(hidden_layer_sizes=(100, ), activation='relu', solver='adam', alpha=0.0001, batch_size='auto', learning_rate='constant', learning_rate_init=0.001, power_t=0.5, max_iter=200, shuffle=True, random_state=None, tol=0.0001, verbose=False, warm_start=False, momentum=0.9, nesterovs_momentum=True, early_stopping=False, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, n_iter_no_change=10, max_fun=15000)))
+        # Add more models as needed
+    return models
+
+# Example usage:
+selected_algorithms = [
+    "RandomForestClassifier",
+    "RandomForestRegressor",
+    "GradientBoostingRegressor",
+    "GradientBoostingClassifier",
+    "DecisionTreeRegressor",
+    "DecisionTreeClassifier",
+    "SVR",
+    "SVC",
+    "KNeighborsRegressor",
+    "KNeighborsClassifier",
+    "SGDRegressor",
+    "SGDClassifier",
+    "ExtraTreesRegressor",
+    "ExtraTreesClassifier",
+    "MLPRegressor",
+    "MLPClassifier",
+    "xg_boost",
+    "KernelRidge",
+    'neural_network'
+]
+
+models = create_models(selected_algorithms)
+print(models)
+
+
+from sklearn.model_selection import GridSearchCV
+
+def hyperparameter_tuning(models, hyperparameters, X_train, y_train):
+    tuned_models = []
+    for name, model in models:
+        if name in hyperparameters:
+            param_grid = hyperparameters[name]
+            grid_search = GridSearchCV(model, param_grid, cv=5, scoring='neg_mean_squared_error')
+            grid_search.fit(X_train, y_train)
+            tuned_models.append((name, grid_search.best_estimator_))
+        else:
+            tuned_models.append((name, model))
+    return tuned_models
+
+
+def evaluate_models(models, X_test, y_test):
+    results = {}
+    for name, model in models:
+        y_pred = model.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        results[name] = {'Mean Squared Error': mse, 'R-squared': r2}
+    return results
+
